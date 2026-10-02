@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><link rel="stylesheet" href="popup.css"></head>
+<body><h1>Sonos Tab Audio</h1><p class="sub">Tab-Ton direkt ins Heimnetz</p>
+<label for="devices">Raum oder bestehende Gruppe</label><select id="devices"></select>
+<button id="refresh" class="secondary">Geräte suchen</button>
+<details><summary>Gerät manuell hinzufügen</summary><div class="manual"><input id="ip" placeholder="192.168.178.42" aria-label="Sonos-IP"><button id="add">Hinzufügen</button></div></details>
+<p>Quelle: <span id="source">Aktueller Tab</span></p>
+<button id="start">Auf Sonos abspielen</button><button id="stop" class="secondary" disabled>Übertragung stoppen</button>
+<label for="volume">Lautstärke <output id="level">–</output></label><input id="volume" type="range" min="0" max="100" value="25" disabled>
+<p id="status" role="status">Bereit</p><p class="foot">Lokal · ohne Konto · mit Audioverzögerung</p>
+<script src="popup.js"></script></body></html>
