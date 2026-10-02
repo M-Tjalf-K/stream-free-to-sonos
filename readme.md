@@ -1,99 +1,75 @@
 # Stream to Sonos
 
-Eine minimale Chrome-Erweiterung für Tab-Ton auf Sonos im Heimnetz. Keine Anmeldung, kein externer Server, keine Telemetrie. Chrome startet den lokalen Helfer bei Bedarf über Native Messaging. Nach Stop oder Verlust der Browserverbindung endet er wieder. Die Gerätesuche startet kurzzeitig ebenfalls einen Helfer.
+Ein unabh?ngiges Open-Source-Projekt, das den Ton eines Chrome-Tabs auf Sonos-Lautsprecher im lokalen Netzwerk ?bertr?gt. Geeignet f?r YouTube, Podcasts und Livestreams ? ohne Sonos-Login, Cloud-Server oder Telemetrie.
 
-## Auf diesem Rechner loslegen
+Die Erweiterung nutzt einen kleinen lokalen Helfer, den Chrome automatisch startet und nach der ?bertragung wieder beendet. Unterst?tzt werden einzelne R?ume und bereits bestehende Sonos-Gruppen inklusive Lautst?rkeregelung.
 
-Der Helfer wurde bereits nach `%LOCALAPPDATA%\SonosTabAudio` installiert und für Chrome registriert.
+## Voraussetzungen
 
-1. In Chrome `chrome://extensions` öffnen und **Entwicklermodus** einschalten.
-2. **Entpackte Erweiterung laden** wählen und diesen Ordner auswählen:
-   `C:\GitRep\sonos-chrome\extension`
-3. Die Erweiterung über Chromes Erweiterungsmenü anheften.
-4. YouTube oder einen anderen Audio-Tab öffnen und die Wiedergabe starten.
-5. Erweiterung anklicken, Raum bzw. bestehende Gruppe auswählen und **Auf Sonos abspielen** drücken.
+- Windows mit .NET Framework 4.x inklusive C#-Compiler
+- Google Chrome ab Version 116
+- Python ab Version 3.9
+- FFmpeg mit `libmp3lame`, vorzugsweise als eigenst?ndige EXE ohne zus?tzliche DLLs
+- Rechner und Sonos im selben erreichbaren Netzwerk; UPnP muss in Sonos aktiviert sein
 
-Die Suche startet beim ersten Öffnen automatisch. Bei Bedarf **Geräte suchen** erneut drücken oder die private IPv4-Adresse eines Sonos-Geräts manuell eingeben. Gruppen und Stereopaare werden aus der Sonos-Topologie übernommen; die Lautstärke steuert die ausgewählte Gruppe. Neue Gruppen legt man zunächst in der Sonos-App an.
+Python und FFmpeg m?ssen im `PATH` verf?gbar sein. Es werden keine zus?tzlichen Python-Pakete f?r den Betrieb ben?tigt.
 
-Das Popup darf während der Übertragung geschlossen werden. Pause, Titelauswahl und Springen bedient man auf der Quellseite. **Übertragung stoppen** beendet Stream und Erfassung; der Tab-Ton wird anschließend wieder lokal ausgegeben. Der Helfer stoppt keine andere Audioquelle, die inzwischen durch einen anderen Controller gestartet wurde. Die vorherige Sonos-Wiedergabe wird nicht automatisch wiederhergestellt.
+## Installation
 
-## Installation auf einem anderen Windows-Rechner
+1. Repository klonen oder herunterladen und entpacken.
+2. Im Projektordner PowerShell ?ffnen und den Helfer installieren:
 
-Voraussetzungen: Chrome 116 oder neuer, Python 3.9 oder neuer, FFmpeg mit `libmp3lame`, Windows .NET Framework 4.x inklusive C#-Compiler. Python und FFmpeg müssen im PATH liegen oder explizit angegeben werden. Es werden keine Python-Laufzeitpakete benötigt.
+   ```powershell
+   powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install.ps1
+   ```
 
-Im Projektordner in PowerShell:
+   Falls Python oder FFmpeg nicht im `PATH` liegen, ihre Pfade angeben:
+
+   ```powershell
+   powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install.ps1 -PythonPath 'C:\Pfad\python.exe' -FFmpegPath 'C:\Pfad\ffmpeg.exe'
+   ```
+
+3. In Chrome `chrome://extensions` ?ffnen und **Entwicklermodus** aktivieren.
+4. **Entpackte Erweiterung laden** ausw?hlen und den Unterordner `extension` des Projekts ?ffnen.
+5. Die Erweiterung bei Bedarf im Chrome-Erweiterungsmen? anheften.
+
+Der Helfer wird f?r den aktuellen Windows-Benutzer installiert. Wenn die Windows-Firewall nach Netzwerkzugriff f?r Python fragt, Zugriff im privaten Netzwerk erlauben.
+
+## Nutzung
+
+1. Einen Tab mit Audio ?ffnen und die Wiedergabe starten.
+2. **Stream to Sonos** ?ffnen und einen Raum oder eine bestehende Gruppe ausw?hlen.
+3. **Auf Sonos abspielen** anklicken. Das Popup kann anschlie?end geschlossen werden.
+4. Mit **?bertragung stoppen** die ?bertragung beenden und den Ton wieder lokal ausgeben.
+
+Pause, Titelauswahl und Springen erfolgen auf der Quellseite. Gruppen werden in der Sonos-App angelegt. Falls die automatische Suche keine Ger?te findet, kann eine Sonos-IP manuell eingegeben werden. Erfolgreich gefundene Ger?te werden lokal f?r sp?tere Suchen gespeichert.
+
+## Hinweise
+
+- Sonos puffert den Ton. Die ?bertragung eignet sich f?r Audio; lippensynchroner Videoton ist nicht gew?hrleistet.
+- Chrome, Quell-Tab und Rechner m?ssen w?hrend der ?bertragung laufen. S?mtlicher Ton des ausgew?hlten Tabs wird ?bertragen, einschlie?lich Werbung.
+- Eine Quelle und ein Raum beziehungsweise eine bestehende Gruppe werden gleichzeitig unterst?tzt. DRM-gesch?tzte Inhalte sind nicht zugesichert.
+- Gast-WLAN, Netzwerkisolation oder Firewall-Regeln k?nnen die Verbindung verhindern. Sonos-UPnP ist kein offiziell unterst?tzter Steuerweg; die Kompatibilit?t kann sich durch Firmware-Updates ?ndern.
+
+## Deinstallation
+
+Die ?bertragung stoppen und im Projektordner ausf?hren:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\uninstall.ps1
 ```
 
-Alternativ mit festen Pfaden:
+Anschlie?end die Erweiterung unter `chrome://extensions` entfernen.
 
-```powershell
-.\scripts\install.ps1 -PythonPath 'C:\Pfad\python.exe' -FFmpegPath 'C:\Pfad\ffmpeg.exe'
-```
+## Entwicklung
 
-Danach die Erweiterung wie oben laden. Der Installer kopiert Helfer und FFmpeg, erstellt den Windows-Launcher und registriert den Native-Messaging-Host nur für den aktuellen Benutzer unter `HKCU`. Kein Autostart und kein Windows-Dienst. Der Python-Interpreter bleibt am angegebenen Installationsort erforderlich. Eine FFmpeg-Version mit zusätzlichen DLLs benötigt diese DLLs im Installationsordner; getestet wurde hier die eigenständige vorhandene FFmpeg-EXE.
+Beitr?ge, Fehlerberichte und Verbesserungsvorschl?ge sind willkommen. Die Laufzeit besteht aus JavaScript, der Python-Standardbibliothek und FFmpeg.
 
-Die öffentliche `key` im Extension-Manifest hält die Erweiterungs-ID stabil: `dpdoiohoioboehbhnnkoogibhgiikigd`. Das ist kein geheimer Schlüssel. Wird sie geändert, muss der Helfer mit `-ExtensionId <neue-ID>` neu registriert werden. Bei Codeänderungen Helfer erneut installieren und die Erweiterung auf `chrome://extensions` neu laden; vorher eine laufende Übertragung stoppen.
-
-Deinstallation:
-
-```powershell
-.\scripts\uninstall.ps1
-```
-
-Vorher die Übertragung stoppen. Die Erweiterung anschließend in Chrome entfernen. Die Deinstallation entfernt nur den Helfer und seine Chrome-Registrierung, nicht die bestehende Python-Installation.
-
-## Netzwerk und Grenzen
-
-- Rechner und Sonos müssen sich erreichen können. Gast-WLAN/Client-Isolation und getrennte VLANs können Suche oder Streaming verhindern. Die SSDP-Suche sendet explizit über alle geeigneten lokalen IPv4-Adapter, auch bei mehreren Ethernet-Netzen. Erfolgreich gefundene Sonos-IP-Adressen werden lokal in `known-devices.json` gespeichert und bei späteren Suchen erneut geprüft; dadurch hilft eine einmalige manuelle Eingabe auch bei blockiertem Multicast dauerhaft.
-- In Sonos muss **UPnP** erlaubt sein: Konto → Rechtliches und Datenschutz → Datenschutz und Sicherheit → Verbindungssicherheit. Sonos bezeichnet UPnP als nicht offiziell unterstützten Steuerweg; Firmware-Kompatibilität muss an den eigenen Geräten geprüft werden.
-- Wenn Windows nach Netzwerkzugriff für Python fragt, Zugriff im **privaten Netzwerk** erlauben. Der Stream läuft auf einem zufälligen Port. Eine Firewall kann sonst verhindern, dass Sonos den Stream abholt. Keine Router-Portfreigabe einrichten.
-- Musik, Podcasts und Livestream-Audio sind der Zielanwendungsfall. Sonos puffert den Stream; Verzögerung und Videoton-Synchronität sind hier noch nicht am Gerät gemessen.
-- Tab, Chrome und Rechner müssen während der Übertragung laufen. Werbung und sämtliche weiteren Geräusche desselben Tabs werden mit übertragen. DRM-geschützte Inhalte sind nicht zugesichert.
-- MVP: eine Audioquelle und ein Raum/eine bestehende Gruppe gleichzeitig. Kein Systemaudio, keine Playlistverwaltung, keine automatische Gruppierung.
-
-## Aufbau
-
-```text
-Tab-Ton → tabCapture → Offscreen Document → AudioWorklet
-       → 48-kHz-Stereo-PCM über localhost → Python-Helfer
-       → FFmpeg: MP3 mit 192 kbit/s → HTTP-Abruf durch Sonos
-
-Popup → Service Worker → Native Messaging → Helfer
-                                         → SSDP / lokale Sonos-SOAP-Steuerung
-```
-
-Audio wird in 200-ms-Blöcken über HTTP an localhost geschickt. Der Upload akzeptiert ausschließlich localhost, die registrierte Erweiterungs-Origin und einen zufälligen Sitzungstoken. Steuerbefehle laufen ausschließlich über Native Messaging. Der MP3-Endpunkt hat eine zufällige URL und akzeptiert nur die IP des ausgewählten Sonos-Gruppenkoordinators. Audiodaten werden nicht dauerhaft gespeichert. Der Helfer beendet bei ausbleibendem Browser-Audio die Sitzung; die Erweiterung bricht bei einem wachsenden Übertragungsrückstand ab.
-
-Die lokale Sonos-Steuerung ist bewusst mit der Python-Standardbibliothek implementiert. Dadurch entfällt für dieses kleine Tool eine zusätzliche SoCo-Installation; Discovery und Gruppensteuerung verwenden die gleichen lokalen UPnP-Dienste.
-
-## Validierung
+Tests aus dem Projektordner ausf?hren (Node.js wird f?r die JavaScript-Tests ben?tigt):
 
 ```powershell
 python -m unittest discover -s tests -v
 node --test tests/test_extension.cjs
 ```
 
-Diese Tests prüfen Nachrichtenframing, IP-/Lautstärkevalidierung, Gruppenkoordinatoren, Audio-Worklet-Konvertierung, Extension-Start/Stop und einen echten FFmpeg-/HTTP-Stream inklusive Dekodierung, Zugriffsschutz und Prozessende. Nur die Sonos-Geräteantworten werden simuliert.
-
-Optionaler Browser-Test unter Windows (Playwright und Chromium benötigt):
-
-```powershell
-.\.venv\Scripts\python.exe tests\browser_smoke.py
-```
-
-Er lädt die echte Erweiterung in einem separaten Chromium-Testprofil, prüft den installierten Native-Messaging-Launcher, rendert das Popup und überträgt synthetisches Browser-Audio durch den echten AudioWorklet-/HTTP-/FFmpeg-Pfad. Er startet keinen realen Sonos-Lautsprecher. Screenshots liegen unter `.test-artifacts`. Für Chromium wird eine temporäre Native-Host-Registrierung angelegt und anschließend zurückgesetzt.
-
-**Stand der Geräteprüfung:** Nach Korrektur der Schnittstellenauswahl findet die automatische Suche auf diesem Rechner vier Sonos-Räume ohne manuelle IP-Eingabe. Echte Tab-Erfassung nach Toolbar-Klick und Wiedergabe, Latenz sowie Langzeitstabilität am Sonos sind noch ausstehend. Der Browser-Audiotest verwendet eine synthetische Quelle statt einer echten `tabCapture`-Freigabe.
-
-Für den ersten Gerätetest: Stream starten, Wiedergabe mindestens 30 Minuten laufen lassen, Pause/Sprung auf der Quellseite ausprobieren, Popup schließen/öffnen und Stop sowie Schließen des Quell-Tabs prüfen. Bei Fehlern zuerst Statusmeldung, Sonos-UPnP-Einstellung und Windows-Firewall prüfen.
-
-## Referenzen
-
-- [Chrome: Tab-Audio und Offscreen Document](https://developer.chrome.com/docs/extensions/how-to/web-platform/screen-capture)
-- [Chrome: Native Messaging](https://developer.chrome.com/docs/extensions/develop/concepts/native-messaging)
-- [Sonos: unterstützte Audioformate](https://docs.sonos.com/docs/supported-audio-formats)
-- [Sonos: Verbindungssicherheit / UPnP](https://support.sonos.com/en/article/adjust-connection-security-settings)
-- [SoCo: Gruppensteuerung als Protokollreferenz](https://github.com/SoCo/SoCo/blob/master/soco/groups.py)
+Eine Open-Source-Lizenz ist bisher noch nicht im Repository hinterlegt.
