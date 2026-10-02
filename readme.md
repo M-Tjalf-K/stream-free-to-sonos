@@ -1,4 +1,4 @@
-# Sonos Tab Audio
+# Stream to Sonos
 
 Eine minimale Chrome-Erweiterung für Tab-Ton auf Sonos im Heimnetz. Keine Anmeldung, kein externer Server, keine Telemetrie. Chrome startet den lokalen Helfer bei Bedarf über Native Messaging. Nach Stop oder Verlust der Browserverbindung endet er wieder. Die Gerätesuche startet kurzzeitig ebenfalls einen Helfer.
 
@@ -47,7 +47,7 @@ Vorher die Übertragung stoppen. Die Erweiterung anschließend in Chrome entfern
 
 ## Netzwerk und Grenzen
 
-- Rechner und Sonos müssen sich erreichen können. Gast-WLAN/Client-Isolation und getrennte VLANs können Suche oder Streaming verhindern. Bei mehreren Netzwerkadaptern hilft eine manuell eingetragene Sonos-IP.
+- Rechner und Sonos müssen sich erreichen können. Gast-WLAN/Client-Isolation und getrennte VLANs können Suche oder Streaming verhindern. Die SSDP-Suche sendet explizit über alle geeigneten lokalen IPv4-Adapter, auch bei mehreren Ethernet-Netzen. Erfolgreich gefundene Sonos-IP-Adressen werden lokal in `known-devices.json` gespeichert und bei späteren Suchen erneut geprüft; dadurch hilft eine einmalige manuelle Eingabe auch bei blockiertem Multicast dauerhaft.
 - In Sonos muss **UPnP** erlaubt sein: Konto → Rechtliches und Datenschutz → Datenschutz und Sicherheit → Verbindungssicherheit. Sonos bezeichnet UPnP als nicht offiziell unterstützten Steuerweg; Firmware-Kompatibilität muss an den eigenen Geräten geprüft werden.
 - Wenn Windows nach Netzwerkzugriff für Python fragt, Zugriff im **privaten Netzwerk** erlauben. Der Stream läuft auf einem zufälligen Port. Eine Firewall kann sonst verhindern, dass Sonos den Stream abholt. Keine Router-Portfreigabe einrichten.
 - Musik, Podcasts und Livestream-Audio sind der Zielanwendungsfall. Sonos puffert den Stream; Verzögerung und Videoton-Synchronität sind hier noch nicht am Gerät gemessen.
@@ -86,7 +86,7 @@ Optionaler Browser-Test unter Windows (Playwright und Chromium benötigt):
 
 Er lädt die echte Erweiterung in einem separaten Chromium-Testprofil, prüft den installierten Native-Messaging-Launcher, rendert das Popup und überträgt synthetisches Browser-Audio durch den echten AudioWorklet-/HTTP-/FFmpeg-Pfad. Er startet keinen realen Sonos-Lautsprecher. Screenshots liegen unter `.test-artifacts`. Für Chromium wird eine temporäre Native-Host-Registrierung angelegt und anschließend zurückgesetzt.
 
-**Stand der Geräteprüfung:** Automatische Suche auf diesem Rechner hat keine Sonos-Geräte gefunden. Echte Tab-Erfassung nach Toolbar-Klick und Wiedergabe, Latenz sowie Langzeitstabilität am Sonos sind daher noch ausstehend. Der Browser-Audiotest verwendet eine synthetische Quelle statt einer echten `tabCapture`-Freigabe.
+**Stand der Geräteprüfung:** Nach Korrektur der Schnittstellenauswahl findet die automatische Suche auf diesem Rechner vier Sonos-Räume ohne manuelle IP-Eingabe. Echte Tab-Erfassung nach Toolbar-Klick und Wiedergabe, Latenz sowie Langzeitstabilität am Sonos sind noch ausstehend. Der Browser-Audiotest verwendet eine synthetische Quelle statt einer echten `tabCapture`-Freigabe.
 
 Für den ersten Gerätetest: Stream starten, Wiedergabe mindestens 30 Minuten laufen lassen, Pause/Sprung auf der Quellseite ausprobieren, Popup schließen/öffnen und Stop sowie Schließen des Quell-Tabs prüfen. Bei Fehlern zuerst Statusmeldung, Sonos-UPnP-Einstellung und Windows-Firewall prüfen.
 

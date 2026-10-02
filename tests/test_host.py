@@ -13,7 +13,7 @@ import urllib.error
 import urllib.request
 import xml.etree.ElementTree as ET
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "helper"))
 import host
@@ -43,6 +43,40 @@ class ProtocolTests(unittest.TestCase):
         for value in [-1, 101, True, 3.5, "35"]:
             with self.assertRaises(ValueError):
                 host.volume("192.168.1.2", value)
+
+
+class DiscoveryTests(unittest.TestCase):
+    def test_interface_addresses_exclude_loopback_and_link_local(self):
+        addresses = ["192.168.0.186", "192.168.1.112", "172.27.0.1", "169.254.1.1", "127.0.0.1", "192.168.0.186"]
+        entries = [(host.socket.AF_INET, host.socket.SOCK_DGRAM, 0, "", (address, 0)) for address in addresses]
+        with patch.object(host.socket, "getaddrinfo", return_value=entries):
+            self.assertEqual(host.interface_addresses(), ["172.27.0.1", "192.168.0.186", "192.168.1.112"])
+
+    def test_ssdp_binds_each_adapter_and_filters_non_sonos_replies(self):
+        sockets = [MagicMock(), MagicMock()]
+        sockets[0].recvfrom.return_value = (b"HTTP/1.1 200 OK\r\nSERVER: Sonos\r\n", ("192.168.0.43", 1900))
+        sockets[1].recvfrom.return_value = (b"HTTP/1.1 200 OK\r\nSERVER: Television\r\n", ("192.168.1.20", 1900))
+        with patch.object(host, "interface_addresses", return_value=["192.168.0.186", "192.168.1.112"]), \
+                patch.object(host.socket, "socket", side_effect=sockets), \
+                patch.object(host.select, "select", return_value=(sockets, [], [])), \
+                patch.object(host.time, "monotonic", side_effect=[0, 0, 0, 10]):
+            self.assertEqual(host.ssdp_discover(), {"192.168.0.43"})
+        for sock, address in zip(sockets, ["192.168.0.186", "192.168.1.112"]):
+            sock.bind.assert_called_once_with((address, 0))
+            self.assertEqual(sock.sendto.call_count, 4)
+            self.assertIn(unittest.mock.call(host.socket.IPPROTO_IP, host.socket.IP_MULTICAST_IF, host.socket.inet_aton(address)), sock.setsockopt.call_args_list)
+            sock.close.assert_called_once()
+
+    def test_verified_manual_seed_survives_host_restart_and_blocked_multicast(self):
+        groups = ET.fromstring('<ZoneGroups><ZoneGroup Coordinator="A"><ZoneGroupMember UUID="A" ZoneName="Room" Location="http://192.168.0.43:1400/x"/></ZoneGroup></ZoneGroups>')
+        with tempfile.TemporaryDirectory() as folder, patch.object(host, "CACHE", Path(folder) / "known-devices.json"), \
+                patch.object(host, "ssdp_discover", return_value=set()), \
+                patch.object(host, "device", return_value={"name": "Room"}), \
+                patch.object(host, "topology", return_value=groups), \
+                patch.object(host, "volume", return_value=33):
+            manual = host.discover("192.168.0.43")
+            self.assertEqual(host.known_devices(), {"192.168.0.43"})
+            self.assertEqual(host.discover(), manual)
 
 
 class StreamTests(unittest.TestCase):

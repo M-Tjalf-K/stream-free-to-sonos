@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Sonos Tab Audio",
+  "name": "Stream to Sonos",
   "version": "0.1.0",
   "description": "Überträgt Tab-Ton lokal auf Sonos. Ohne Konto oder Cloud.",
   "minimum_chrome_version": "116",
@@ -19,7 +19,7 @@
   },
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Sonos Tab Audio"
+    "default_title": "Stream to Sonos"
   },
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAlBu53WHQTVUkYu8eGsaxeA63kEsEEqE/XDJCStmj8mr/WIAHl81k4KhxqVtkKGL2QrvAgStfEUKMJPzTsEYHqDeofH1HbE1ADkakLPBqVFwYrMqjCdblruUuWA8iVG1LsHxH+k+1XrxbQcZlma6bOMGV2QzBCZxOjvY9IxIWb0nr/6EQVKUF4iepUUBqxqKN8jl63DRKvjkcJT8sgGEtJi8BrSuwZWImIPpKRCFnB4HWnIyVIA4yK9xxrwNrUjEyPZ2yji+N+TvC9mFBl2pkqnqilqs3CjUE9jmVNEuX9YAhcJfTUDfbkgN331h01IHCREV9T8LNc9u4/VmVVv4sywIDAQAB"
 }

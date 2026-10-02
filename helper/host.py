@@ -5,6 +5,7 @@ import json
 import os
 import queue
 import secrets
+import select
 import socket
 import struct
 import subprocess
@@ -21,6 +22,81 @@ from xml.sax.saxutils import escape
 
 ROOT = Path(__file__).resolve().parent
 HTTP = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+CACHE = ROOT / "known-devices.json"
+
+
+def interface_addresses():
+    """Windows resolves the machine name to addresses on all active adapters."""
+    addresses = set()
+    for item in socket.getaddrinfo(socket.gethostname(), None, socket.AF_INET, socket.SOCK_DGRAM):
+        try:
+            addresses.add(local_ip(item[4][0]))
+        except ValueError:
+            pass
+    return sorted(addresses)
+
+
+def ssdp_discover(timeout=3.0):
+    """Probe every adapter concurrently instead of relying on the multicast route."""
+    sockets, found = [], set()
+    targets = ("urn:schemas-upnp-org:device:ZonePlayer:1", "urn:schemas-upnp-org:device:MediaRenderer:1")
+    try:
+        for address in interface_addresses():
+            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            try:
+                sock.bind((address, 0))
+                sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_IF, socket.inet_aton(address))
+                sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 2)
+                sock.setblocking(False)
+                for target in targets:
+                    packet = ('M-SEARCH * HTTP/1.1\r\nHOST: 239.255.255.250:1900\r\nMAN: "ssdp:discover"\r\n'
+                              'MX: 1\r\nST: {}\r\n\r\n').format(target).encode()
+                    # Retry once: UDP discovery packets can be lost.
+                    for _ in range(2):
+                        sock.sendto(packet, ("239.255.255.250", 1900))
+                sockets.append(sock)
+            except OSError:
+                sock.close()  # An adapter may disappear during enumeration.
+        deadline = time.monotonic() + timeout
+        while sockets and time.monotonic() < deadline:
+            readable, _, _ = select.select(sockets, [], [], min(0.3, max(0, deadline - time.monotonic())))
+            for sock in readable:
+                try:
+                    payload, address = sock.recvfrom(65536)
+                    # MediaRenderer also returns TVs etc.; only probe Sonos responses.
+                    if b"sonos" in payload.lower() or b"zoneplayer" in payload.lower():
+                        found.add(local_ip(address[0]))
+                except (OSError, ValueError):
+                    continue
+        return found
+    finally:
+        for sock in sockets:
+            sock.close()
+
+
+def known_devices():
+    try:
+        values = json.loads(CACHE.read_text(encoding="utf-8"))
+        if not isinstance(values, list):
+            return set()
+        result = set()
+        for value in values[:64]:
+            try:
+                result.add(local_ip(value))
+            except (ValueError, TypeError):
+                pass
+        return result
+    except (OSError, ValueError):
+        return set()
+
+
+def remember_devices(addresses):
+    try:
+        temporary = CACHE.with_suffix(".tmp")
+        temporary.write_text(json.dumps(sorted(addresses)[:64]), encoding="utf-8")
+        temporary.replace(CACHE)
+    except OSError:
+        pass  # Discovery still works when the installation directory is read-only.
 
 
 def local_ip(value):
@@ -98,26 +174,16 @@ def discover(manual=""):
     if manual:
         ips = {local_ip(manual)}
     else:
-        ips = set()
-        packet = ("M-SEARCH * HTTP/1.1\r\nHOST: 239.255.255.250:1900\r\nMAN: \"ssdp:discover\"\r\n"
-                  "MX: 1\r\nST: urn:schemas-upnp-org:device:ZonePlayer:1\r\n\r\n").encode()
-        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
-            sock.settimeout(0.3)
-            sock.sendto(packet, ("239.255.255.250", 1900))
-            deadline = time.monotonic() + 2.5
-            while time.monotonic() < deadline:
-                try:
-                    _, address = sock.recvfrom(65536)
-                    ips.add(local_ip(address[0]))
-                except socket.timeout:
-                    continue
-                except ValueError:
-                    continue
+        ips = ssdp_discover() | known_devices()
     result = {}
+    verified = set()
     for ip in sorted(ips):
+        if ip in verified:
+            continue
         try:
             data = device(ip)
             groups = topology(ip)
+            verified.add(ip)
             for group in groups.iter("ZoneGroup"):
                 members = [member for member in group.findall("ZoneGroupMember") if member.get("Invisible") != "1"]
                 coordinator = next((member for member in group.findall("ZoneGroupMember") if member.get("UUID") == group.get("Coordinator")), None)
@@ -126,9 +192,16 @@ def discover(manual=""):
                 target = local_ip(urllib.parse.urlparse(coordinator.get("Location", "")).hostname)
                 names = [member.get("ZoneName", "Sonos") for member in members]
                 result[target] = {"ip": target, "name": " + ".join(names) or data["name"], "volume": volume(target)}
+                for member in group.iter("ZoneGroupMember"):
+                    try:
+                        verified.add(local_ip(urllib.parse.urlparse(member.get("Location", "")).hostname))
+                    except (ValueError, TypeError):
+                        pass
         except Exception:
             if manual:
                 raise
+    if result:
+        remember_devices(verified)
     return sorted(result.values(), key=lambda item: item["name"].lower())
 
 
@@ -183,15 +256,20 @@ class Session:
 
             def do_POST(self):
                 self.connection.settimeout(5)
-                if not self.upload_allowed() or not secrets.compare_digest(self.headers.get("X-Session-Token", ""), session.token):
-                    self.reply(403)
-                    return
                 try:
                     length = int(self.headers.get("Content-Length", "0"))
-                    if not 0 < length <= 192000 or length % 4:
+                    if not 0 < length <= 192000:
                         self.reply(400)
                         return
+                    # Drain bounded request bodies before rejecting them. Closing with unread
+                    # bytes can reset the connection on Windows and hide the HTTP status.
                     data = self.rfile.read(length)
+                    if not self.upload_allowed() or not secrets.compare_digest(self.headers.get("X-Session-Token", ""), session.token):
+                        self.reply(403)
+                        return
+                    if length % 4:
+                        self.reply(400)
+                        return
                     if len(data) != length or not session.running:
                         self.reply(410)
                         return
