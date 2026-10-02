@@ -1,75 +1,77 @@
 # Stream to Sonos
 
-Ein unabh?ngiges Open-Source-Projekt, das den Ton eines Chrome-Tabs auf Sonos-Lautsprecher im lokalen Netzwerk ?bertr?gt. Geeignet f?r YouTube, Podcasts und Livestreams ? ohne Sonos-Login, Cloud-Server oder Telemetrie.
+An independent open-source project that streams audio from a Chrome tab to Sonos speakers on your local network. Use it for YouTube, podcasts, and live streams without a Sonos login, cloud server, or telemetry.
 
-Die Erweiterung nutzt einen kleinen lokalen Helfer, den Chrome automatisch startet und nach der ?bertragung wieder beendet. Unterst?tzt werden einzelne R?ume und bereits bestehende Sonos-Gruppen inklusive Lautst?rkeregelung.
+The extension uses a small local helper that Chrome starts automatically and shuts down when streaming ends. It supports individual rooms and existing Sonos groups, including volume control.
 
-## Voraussetzungen
+## Requirements
 
-- Windows mit .NET Framework 4.x inklusive C#-Compiler
-- Google Chrome ab Version 116
-- Python ab Version 3.9
-- FFmpeg mit `libmp3lame`, vorzugsweise als eigenst?ndige EXE ohne zus?tzliche DLLs
-- Rechner und Sonos im selben erreichbaren Netzwerk; UPnP muss in Sonos aktiviert sein
+- Windows with .NET Framework 4.x, including the C# compiler
+- Google Chrome 116 or later
+- Python 3.9 or later
+- FFmpeg with `libmp3lame`, preferably a standalone executable without additional DLLs
+- Your computer and Sonos devices must be able to reach each other on the local network, with UPnP enabled in Sonos
 
-Python und FFmpeg m?ssen im `PATH` verf?gbar sein. Es werden keine zus?tzlichen Python-Pakete f?r den Betrieb ben?tigt.
+Python and FFmpeg must be available in your `PATH`, or their paths must be provided during installation. No additional Python packages are required to run the helper.
 
 ## Installation
 
-1. Repository klonen oder herunterladen und entpacken.
-2. Im Projektordner PowerShell ?ffnen und den Helfer installieren:
+1. Clone the repository or download and extract it.
+2. Open PowerShell in the project directory and install the helper:
 
    ```powershell
    powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install.ps1
    ```
 
-   Falls Python oder FFmpeg nicht im `PATH` liegen, ihre Pfade angeben:
+   If Python or FFmpeg is not in your `PATH`, provide their paths:
 
    ```powershell
-   powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install.ps1 -PythonPath 'C:\Pfad\python.exe' -FFmpegPath 'C:\Pfad\ffmpeg.exe'
+   powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install.ps1 -PythonPath 'C:\Path\python.exe' -FFmpegPath 'C:\Path\ffmpeg.exe'
    ```
 
-3. In Chrome `chrome://extensions` ?ffnen und **Entwicklermodus** aktivieren.
-4. **Entpackte Erweiterung laden** ausw?hlen und den Unterordner `extension` des Projekts ?ffnen.
-5. Die Erweiterung bei Bedarf im Chrome-Erweiterungsmen? anheften.
+3. Open `chrome://extensions` in Chrome and enable **Developer mode**.
+4. Click **Load unpacked** and select the project's `extension` directory.
+5. Optionally pin the extension in Chrome's extensions menu.
 
-Der Helfer wird f?r den aktuellen Windows-Benutzer installiert. Wenn die Windows-Firewall nach Netzwerkzugriff f?r Python fragt, Zugriff im privaten Netzwerk erlauben.
+The helper is installed for the current Windows user. If Windows Firewall asks whether Python may access the network, allow access on private networks.
 
-## Nutzung
+## Usage
 
-1. Einen Tab mit Audio ?ffnen und die Wiedergabe starten.
-2. **Stream to Sonos** ?ffnen und einen Raum oder eine bestehende Gruppe ausw?hlen.
-3. **Auf Sonos abspielen** anklicken. Das Popup kann anschlie?end geschlossen werden.
-4. Mit **?bertragung stoppen** die ?bertragung beenden und den Ton wieder lokal ausgeben.
+1. Open a tab with audio and start playback.
+2. Open **Stream to Sonos** and select a room or an existing group.
+3. Click **Auf Sonos abspielen** (Play on Sonos). You can then close the popup.
+4. Click **Übertragung stoppen** (Stop streaming) to end streaming and restore local audio playback.
 
-Pause, Titelauswahl und Springen erfolgen auf der Quellseite. Gruppen werden in der Sonos-App angelegt. Falls die automatische Suche keine Ger?te findet, kann eine Sonos-IP manuell eingegeben werden. Erfolgreich gefundene Ger?te werden lokal f?r sp?tere Suchen gespeichert.
+The extension's controls currently use German labels. Pause, select tracks, and seek using the source website. Create groups in the Sonos app. If automatic discovery finds no devices, enter a Sonos device's IP address manually. Successfully discovered devices are saved locally for future searches.
 
-## Hinweise
+## Limitations
 
-- Sonos puffert den Ton. Die ?bertragung eignet sich f?r Audio; lippensynchroner Videoton ist nicht gew?hrleistet.
-- Chrome, Quell-Tab und Rechner m?ssen w?hrend der ?bertragung laufen. S?mtlicher Ton des ausgew?hlten Tabs wird ?bertragen, einschlie?lich Werbung.
-- Eine Quelle und ein Raum beziehungsweise eine bestehende Gruppe werden gleichzeitig unterst?tzt. DRM-gesch?tzte Inhalte sind nicht zugesichert.
-- Gast-WLAN, Netzwerkisolation oder Firewall-Regeln k?nnen die Verbindung verhindern. Sonos-UPnP ist kein offiziell unterst?tzter Steuerweg; die Kompatibilit?t kann sich durch Firmware-Updates ?ndern.
+- Sonos buffers audio, so streaming introduces a delay. Lip-synced video playback is not guaranteed.
+- Chrome, the source tab, and your computer must remain running. All audio from the selected tab is streamed, including advertisements.
+- One source and one room or existing group are supported at a time. Support for DRM-protected content is not guaranteed.
+- Guest Wi-Fi, network isolation, or firewall rules may prevent connections. Sonos UPnP is not an officially supported control interface, and firmware updates may affect compatibility.
 
-## Deinstallation
+## Uninstallation
 
-Die ?bertragung stoppen und im Projektordner ausf?hren:
+Stop streaming, then run this command from the project directory:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\uninstall.ps1
 ```
 
-Anschlie?end die Erweiterung unter `chrome://extensions` entfernen.
+Then remove the extension at `chrome://extensions`.
 
-## Entwicklung
+## Development
 
-Beitr?ge, Fehlerberichte und Verbesserungsvorschl?ge sind willkommen. Die Laufzeit besteht aus JavaScript, der Python-Standardbibliothek und FFmpeg.
+Contributions, bug reports, and suggestions are welcome. The application uses JavaScript, the Python standard library, and FFmpeg.
 
-Tests aus dem Projektordner ausf?hren (Node.js wird f?r die JavaScript-Tests ben?tigt):
+Run the tests from the project directory. Node.js is required for the JavaScript tests:
 
 ```powershell
 python -m unittest discover -s tests -v
 node --test tests/test_extension.cjs
 ```
 
-Eine Open-Source-Lizenz ist bisher noch nicht im Repository hinterlegt.
+## License
+
+This project is licensed under the [MIT License](LICENSE). FFmpeg is an external dependency and remains subject to its own license.
