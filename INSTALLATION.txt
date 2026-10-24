@@ -1,44 +1,46 @@
 Stream to Sonos - Installation
 =============================
 
-1. Stream-to-Sonos-Setup.exe per Doppelklick starten und installieren.
-   Der lokale Helper, FFmpeg, Lizenztexte und die Chrome-Erweiterungsdateien
-   werden fuer den aktuellen Windows-Benutzer installiert.
-   Python, FFmpeg-Downloads und PowerShell sind nicht erforderlich.
+1. Double-click Stream-to-Sonos-Setup.exe and follow the setup wizard.
+   The local helper, FFmpeg, license notices, and Chrome extension files
+   are installed for the current Windows user without administrator rights.
+   No separate Python or FFmpeg installation, or PowerShell command, is needed.
 
-2. In Chrome chrome://extensions oeffnen.
-   Entwicklermodus einschalten und "Entpackte Erweiterung laden" anklicken.
-   Diesen Ordner auswaehlen (Pfad in den Windows-Dateidialog kopieren):
+2. Open chrome://extensions in Chrome.
+   Enable "Developer mode" and click "Load unpacked".
+   Select this folder (paste the path into the Windows folder picker):
 
    %LOCALAPPDATA%\SonosTabAudio\extension
 
-   Alternativ im Startmenue unter "Stream to Sonos" den Eintrag
-   "Chrome-Erweiterungsordner" oeffnen und dessen vollstaendigen Pfad kopieren.
-   Die Erweiterung wird vom Setup nicht automatisch in Chrome installiert.
+   Alternatively, open "Stream to Sonos > Chrome-Erweiterungsordner"
+   (Chrome extension folder) in the Start menu and copy the full folder path.
+   Setup does not automatically install or enable the extension in Chrome.
 
-3. Einen Tab mit Ton oeffnen, die Erweiterung starten, Raum auswaehlen und
-   "Auf Sonos abspielen" anklicken. Rechner und Sonos muessen im lokalen
-   Netzwerk erreichbar sein. Falls Windows nach Netzwerkzugriff fragt,
-   diesen fuer private Netzwerke erlauben.
+3. Open a tab with audio, open the extension, select a room, and click
+   "Play on Sonos". The interface defaults to English. Use the "Language"
+   selector to switch between English and Deutsch; your choice is saved.
+   Your computer and Sonos devices
+   must be able to reach each other on the local network. If Windows asks
+   whether the helper may access the network, allow access on private networks.
 
 Updates
 -------
-Uebertragung stoppen, dann das neue Setup starten. Einstellungen und bekannte
-Geraete bleiben erhalten. Anschliessend unter chrome://extensions bei
-"Stream to Sonos" auf Neu laden klicken.
-Eine zuvor aus einem anderen Ordner geladene Erweiterung einmal entfernen
-und aus dem oben genannten installierten Ordner erneut laden.
+Stop streaming, then run the new setup. Settings and previously discovered
+devices are retained. Then open chrome://extensions and click "Reload"
+for "Stream to Sonos".
+If the extension was previously loaded from another folder, remove it once
+and load it again from the installed folder shown above.
 
-Deinstallation
+Uninstallation
 --------------
-Uebertragung stoppen. Die Erweiterung unter chrome://extensions entfernen.
-Danach unter Windows Einstellungen > Apps > Installierte Apps den Eintrag
-"Stream to Sonos (lokaler Helper)" deinstallieren.
+Stop streaming and remove the extension at chrome://extensions.
+Then open Windows Settings > Apps > Installed apps and uninstall
+"Stream to Sonos (lokaler Helper)" (local helper).
 
-Lizenzen und Quellcode
----------------------
-FFmpeg und LAME sind unter ihren jeweiligen LGPL-Lizenzen enthalten.
-Lizenztexte: FFMPEG-LICENSE.txt und LAME-LICENSE.txt im Installationsordner.
-Exakt passende Quellarchive und Build-Anleitung: ffmpeg-sources.zip.
-FFmpeg kann durch eine eigene kompatible Version ersetzt werden.
-Weitere Komponenten: THIRD-PARTY-NOTICES.txt und zugehoerige Lizenzdateien.
+Licenses and source code
+------------------------
+FFmpeg and LAME are included under their respective LGPL licenses.
+License texts: FFMPEG-LICENSE.txt and LAME-LICENSE.txt in the installation folder.
+Exact corresponding source archives and rebuild instructions: ffmpeg-sources.zip.
+You may replace FFmpeg with your own compatible version.
+Other components: see THIRD-PARTY-NOTICES.txt and the associated license files.

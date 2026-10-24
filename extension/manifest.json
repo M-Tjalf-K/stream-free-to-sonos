@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Stream to Sonos",
   "version": "0.1.0",
-  "description": "Überträgt Tab-Ton lokal auf Sonos. Ohne Konto oder Cloud.",
+  "description": "Stream tab audio locally to Sonos. No account or cloud. English and German interface.",
   "minimum_chrome_version": "116",
   "permissions": [
     "activeTab",

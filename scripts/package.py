@@ -15,7 +15,7 @@ with zipfile.ZipFile(destination) as archive:
     bad_file = archive.testzip()
     if bad_file:
         raise RuntimeError("Corrupt package entry: " + bad_file)
-    required = {"helper/sonos-host.exe", "helper/PYTHON-LICENSE.txt", "extension/manifest.json", "scripts/install.ps1", "LICENSE",
+    required = {"helper/sonos-host.exe", "helper/PYTHON-LICENSE.txt", "extension/manifest.json", "extension/i18n.js", "scripts/install.ps1", "LICENSE",
                 "helper/ffmpeg.exe", "helper/ffmpeg-sources.zip", "helper/FFMPEG-LICENSE.txt", "helper/LAME-LICENSE.txt", "INSTALLATION.txt"}
     if not required.issubset(archive.namelist()):
         raise RuntimeError("Release package is incomplete")

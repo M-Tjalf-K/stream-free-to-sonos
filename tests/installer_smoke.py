@@ -52,6 +52,7 @@ def main():
             with winreg.OpenKey(winreg.HKEY_CURRENT_USER, KEY, 0, ACCESS) as key:
                 assert winreg.QueryValueEx(key, "")[0] == str(manifest_path)
             assert (destination / "extension/manifest.json").exists()
+            assert (destination / "extension/i18n.js").exists()
             assert (destination / "ffmpeg-sources.zip").exists()
             environment = dict(os.environ, PATH=str(Path(os.environ["SystemRoot"]) / "System32"))
             message = json.dumps({"id": 1, "type": "ping"}).encode()

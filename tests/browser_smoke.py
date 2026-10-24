@@ -16,7 +16,7 @@ import host
 ID = "dpdoiohoioboehbhnnkoogibhgiikigd"
 artifacts = ROOT / ".test-artifacts"
 artifacts.mkdir(exist_ok=True)
-native_manifest = Path(os.environ["LOCALAPPDATA"]) / "SonosTabAudio" / "de.local.sonos.json"
+native_manifest = Path(os.environ.get("SONOS_SMOKE_MANIFEST", str(Path(os.environ["LOCALAPPDATA"]) / "SonosTabAudio" / "de.local.sonos.json")))
 assert native_manifest.exists(), "Zuerst scripts/install.ps1 ausführen"
 registry = r"Software\Chromium\NativeMessagingHosts\de.local.sonos"
 previous = None
@@ -37,11 +37,16 @@ try:
         try:
             worker = context.service_workers[0] if context.service_workers else context.wait_for_event("serviceworker")
             assert worker.url.startswith("chrome-extension://" + ID)
+            worker.evaluate("() => chrome.storage.local.remove('language')")
             page = context.new_page()
+            page.set_viewport_size({"width": 342, "height": 600})
             errors = []
             page.on("pageerror", lambda error: errors.append(str(error)))
             page.goto("chrome-extension://" + ID + "/popup.html")
-            page.wait_for_function("() => { const s = document.getElementById('status').textContent; return s === 'Verbunden' || s.startsWith('Keine Geräte'); }", timeout=30000)
+            page.wait_for_function("() => { const s = document.getElementById('status').textContent; return s === 'Connected' || s.startsWith('No devices'); }", timeout=30000)
+            assert page.locator("html").get_attribute("lang") == "en"
+            assert page.locator("#language").input_value() == "en"
+            assert page.locator("#start").inner_text() == "Play on Sonos"
             assert not errors, errors
             status = page.locator("#status").inner_text()
             assert "Helfer" not in status and "host" not in status.lower(), status
@@ -62,15 +67,50 @@ try:
             assert page.locator("#start").is_enabled()
             assert page.locator("#level").inner_text() == "35 %"
             page.locator("body").screenshot(path=str(artifacts / "popup-connected.png"))
+            assert page.evaluate("() => document.body.getBoundingClientRect().height <= 600"), "Default popup exceeds Chrome's height limit"
+            assert page.evaluate("() => document.documentElement.scrollWidth <= innerWidth"), "Popup overflows horizontally"
             page.evaluate("() => render({active:true,status:'Übertragung läuft',devices:[{ip:'192.168.178.42',name:'Wohnzimmer + Küche',volume:35}]})")
             assert page.locator("#stop").is_enabled()
             assert not page.locator("#start").is_enabled()
             assert not page.locator("#devices").is_enabled()
             page.locator("body").screenshot(path=str(artifacts / "popup-active.png"))
+            # Switch during a simulated active stream. The selector must preserve
+            # room, volume, manual input, and disabled controls without native calls.
+            worker.evaluate("() => { state = {active:true,status:'Übertragung läuft',devices:[{ip:'192.168.178.42',name:'Wohnzimmer + Küche',volume:35}]}; }")
+            page.locator("summary").click()
+            page.locator("#ip").fill("192.168.1.123")
+            page.locator("#language").select_option("de")
+            page.wait_for_function("() => document.documentElement.lang === 'de'")
+            assert page.locator("#status").inner_text() == "Übertragung läuft"
+            assert page.locator("#start").inner_text() == "Auf Sonos abspielen"
+            assert page.locator("#devices").input_value() == "192.168.178.42"
+            assert page.locator("#volume").input_value() == "35"
+            assert page.locator("#ip").input_value() == "192.168.1.123"
+            assert worker.evaluate("() => state.active"), "Changing language stopped the stream"
+            assert page.locator("#start").is_disabled()
+            assert page.locator("#stop").is_enabled()
+            page.locator("body").screenshot(path=str(artifacts / "popup-german.png"))
+            page.reload()
+            page.wait_for_function("() => document.documentElement.lang === 'de' && document.getElementById('status').textContent === 'Übertragung läuft'")
+            assert page.locator("#language").input_value() == "de"
+            assert page.evaluate("() => document.body.getBoundingClientRect().height <= 600"), "German popup exceeds Chrome's height limit"
+            page.locator("#language").select_option("en")
+            page.wait_for_function("() => document.getElementById('status').textContent === 'Streaming'")
+            page.reload()
+            page.wait_for_function("() => document.documentElement.lang === 'en' && document.getElementById('status').textContent === 'Streaming'")
+            assert page.locator("#language").input_value() == "en"
+            # Localize a helper validation error and translate it immediately.
+            worker.evaluate("() => { state.active = false; state.status = 'Bitte eine private IPv4-Adresse des Sonos-Geräts eingeben'; }")
+            page.wait_for_function("() => document.getElementById('status').textContent.startsWith('Enter a private IPv4')")
+            page.locator("#language").select_option("de")
+            assert page.locator("#status").inner_text().startswith("Bitte eine private IPv4")
+            page.locator("#language").select_option("en")
+            page.locator("summary").click()
+            page.locator("body").screenshot(path=str(artifacts / "popup-english.png"))
             # Real AudioWorklet + extension-origin HTTP uploads + real FFmpeg.
             # Only Sonos SOAP is mocked: no actual speaker is started by this test.
             with patch.object(host, "group_target", return_value="127.0.0.1"), patch.object(host, "soap", return_value=ET.fromstring("<result/>")):
-                session = host.Session("192.168.1.2", shutil.which("ffmpeg"), "chrome-extension://" + ID, lambda **event: None)
+                session = host.Session("192.168.1.2", os.environ.get("SONOS_TEST_FFMPEG", shutil.which("ffmpeg")), "chrome-extension://" + ID, lambda **event: None)
                 try:
                     audio_page = context.new_page()
                     audio_page.on("pageerror", lambda error: errors.append(str(error)))

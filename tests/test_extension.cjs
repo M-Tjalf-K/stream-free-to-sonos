@@ -3,6 +3,22 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 
+test('localization covers native errors and keeps diagnostic details intact', () => {
+  const context = vm.createContext({});
+  vm.runInContext(fs.readFileSync('extension/i18n.js', 'utf8'), context);
+  const translate = vm.runInContext('SonosI18n.translate', context);
+  assert.equal(translate('ready'), 'Ready');
+  assert.equal(translate('ready', 'invalid'), 'Ready');
+  assert.equal(translate('streaming', 'de'), 'Übertragung läuft');
+  assert.equal(translate('Übertragung läuft'), 'Streaming');
+  assert.equal(translate('Bitte eine private IPv4-Adresse des Sonos-Geräts eingeben'), 'Enter a private IPv4 address for the Sonos device');
+  assert.equal(translate('FFmpeg beendet: encoder failed'), 'FFmpeg exited: encoder failed');
+  assert.equal(translate('Audioverbindung unterbrochen (503)'), 'Audio connection interrupted (HTTP 503)');
+  assert.equal(translate('Audio connection interrupted (HTTP 503)', 'de'), 'Audioverbindung unterbrochen (HTTP 503)');
+  assert.equal(translate('Sonos lehnt Play ab (HTTP 500). UPnP-Einstellung prüfen. code 701'), 'Sonos rejected Play (HTTP 500). Check the UPnP setting. code 701');
+  assert.equal(translate('Unknown OS detail: 123', 'de'), 'Unknown OS detail: 123');
+});
+
 test('worklet batches stereo PCM, clips, duplicates mono and sends silence', () => {
   let Processor;
   const chunks = [];

@@ -25,7 +25,7 @@ The Windows setup includes the standalone helper, Python runtime, and a small LG
    Alternatively, use **Stream to Sonos > Chrome-Erweiterungsordner** in the Start menu and copy the folder's full path.
 4. Optionally pin the extension in Chrome's extensions menu.
 
-Setup copies the extension files but does not install or enable the extension in Chrome. The manual Chrome step is required. A German walkthrough is included as [INSTALLATION.txt](INSTALLATION.txt) and can be opened at the end of setup.
+Setup copies the extension files but does not install or enable the extension in Chrome. The manual Chrome step is required. An English walkthrough is included as [INSTALLATION.txt](INSTALLATION.txt) and can be opened at the end of setup.
 
 The helper and its embedded runtime are installed for the current Windows user. Chrome starts `sonos-host.exe` directly when needed. If Windows Firewall asks whether the helper may access the network, allow access on private networks.
 
@@ -37,10 +37,12 @@ For scripted installation, the alternative ZIP `stream-to-sonos-windows-x64.zip`
 
 1. Open a tab with audio and start playback.
 2. Open **Stream to Sonos** and select a room or an existing group.
-3. Click **Auf Sonos abspielen** (Play on Sonos). You can then close the popup.
-4. Click **Übertragung stoppen** (Stop streaming) to end streaming and restore local audio playback.
+3. Click **Play on Sonos**. You can then close the popup.
+4. Click **Stop streaming** to end streaming and restore local audio playback.
 
-The extension's controls currently use German labels. Pause, select tracks, and seek using the source website. Create groups in the Sonos app. If automatic discovery finds no devices, enter a Sonos device's IP address manually. Successfully discovered devices are saved locally for future searches.
+The interface defaults to English. Use the **Language** selector to switch between **English** and **Deutsch**; the choice is saved locally and applies when the popup is reopened. Switching language also updates status and error messages without stopping a stream or changing the selected room or volume. Device names and source-tab titles are kept as provided.
+
+Pause, select tracks, and seek using the source website. Create groups in the Sonos app. If automatic discovery finds no devices, enter a Sonos device's IP address manually. Successfully discovered devices are saved locally for future searches.
 
 ## Limitations
 

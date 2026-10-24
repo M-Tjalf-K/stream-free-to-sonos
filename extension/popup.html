@@ -1,11 +1,12 @@
 <!doctype html>
-<html lang="de"><head><meta charset="utf-8"><link rel="stylesheet" href="popup.css"></head>
-<body><h1>Stream to Sonos</h1><p class="sub">Tab-Ton direkt ins Heimnetz</p>
-<label for="devices">Raum oder bestehende Gruppe</label><select id="devices"></select>
-<button id="refresh" class="secondary">Geräte suchen</button>
-<details><summary>Gerät manuell hinzufügen</summary><div class="manual"><input id="ip" placeholder="192.168.178.42" aria-label="Sonos-IP"><button id="add">Hinzufügen</button></div></details>
-<p>Quelle: <span id="source">Aktueller Tab</span></p>
-<button id="start">Auf Sonos abspielen</button><button id="stop" class="secondary" disabled>Übertragung stoppen</button>
-<label for="volume">Lautstärke <output id="level">–</output></label><input id="volume" type="range" min="0" max="100" value="25" disabled>
-<p id="status" role="status">Bereit</p><p class="foot">Lokal · ohne Konto · mit Audioverzögerung</p>
-<script src="popup.js"></script></body></html>
+<html lang="en"><head><meta charset="utf-8"><link rel="stylesheet" href="popup.css"></head>
+<body><h1>Stream to Sonos</h1><p class="sub" data-i18n="subtitle">Tab audio straight to your home network</p>
+<div class="language"><label for="language" data-i18n="language">Language</label><select id="language"><option value="en">English</option><option value="de">Deutsch</option></select></div>
+<label for="devices" data-i18n="devices">Room or existing group</label><select id="devices"></select>
+<button id="refresh" class="secondary" data-i18n="refresh">Find devices</button>
+<details><summary data-i18n="manual">Add a device manually</summary><div class="manual"><input id="ip" placeholder="192.168.178.42" aria-label="Sonos IP address"><button id="add" data-i18n="add">Add</button></div></details>
+<p><span data-i18n="source">Source:</span> <span id="source">Current tab</span></p>
+<button id="start" data-i18n="start">Play on Sonos</button><button id="stop" class="secondary" disabled data-i18n="stop">Stop streaming</button>
+<label for="volume"><span data-i18n="volume">Volume</span> <output id="level">–</output></label><input id="volume" type="range" min="0" max="100" value="25" disabled>
+<p id="status" role="status">Ready</p><p class="foot" data-i18n="footer">Local · no account · audio delay applies</p>
+<script src="i18n.js"></script><script src="popup.js"></script></body></html>
