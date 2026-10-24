@@ -2,5 +2,8 @@ __pycache__/
 *.pyc
 .test-artifacts/
 .venv/
+.venv-build/
 helper/known-devices.json
 helper/known-devices.tmp
+build/
+dist/

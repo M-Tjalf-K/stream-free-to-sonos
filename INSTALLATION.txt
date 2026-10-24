@@ -1,0 +1,44 @@
+Stream to Sonos - Installation
+=============================
+
+1. Stream-to-Sonos-Setup.exe per Doppelklick starten und installieren.
+   Der lokale Helper, FFmpeg, Lizenztexte und die Chrome-Erweiterungsdateien
+   werden fuer den aktuellen Windows-Benutzer installiert.
+   Python, FFmpeg-Downloads und PowerShell sind nicht erforderlich.
+
+2. In Chrome chrome://extensions oeffnen.
+   Entwicklermodus einschalten und "Entpackte Erweiterung laden" anklicken.
+   Diesen Ordner auswaehlen (Pfad in den Windows-Dateidialog kopieren):
+
+   %LOCALAPPDATA%\SonosTabAudio\extension
+
+   Alternativ im Startmenue unter "Stream to Sonos" den Eintrag
+   "Chrome-Erweiterungsordner" oeffnen und dessen vollstaendigen Pfad kopieren.
+   Die Erweiterung wird vom Setup nicht automatisch in Chrome installiert.
+
+3. Einen Tab mit Ton oeffnen, die Erweiterung starten, Raum auswaehlen und
+   "Auf Sonos abspielen" anklicken. Rechner und Sonos muessen im lokalen
+   Netzwerk erreichbar sein. Falls Windows nach Netzwerkzugriff fragt,
+   diesen fuer private Netzwerke erlauben.
+
+Updates
+-------
+Uebertragung stoppen, dann das neue Setup starten. Einstellungen und bekannte
+Geraete bleiben erhalten. Anschliessend unter chrome://extensions bei
+"Stream to Sonos" auf Neu laden klicken.
+Eine zuvor aus einem anderen Ordner geladene Erweiterung einmal entfernen
+und aus dem oben genannten installierten Ordner erneut laden.
+
+Deinstallation
+--------------
+Uebertragung stoppen. Die Erweiterung unter chrome://extensions entfernen.
+Danach unter Windows Einstellungen > Apps > Installierte Apps den Eintrag
+"Stream to Sonos (lokaler Helper)" deinstallieren.
+
+Lizenzen und Quellcode
+---------------------
+FFmpeg und LAME sind unter ihren jeweiligen LGPL-Lizenzen enthalten.
+Lizenztexte: FFMPEG-LICENSE.txt und LAME-LICENSE.txt im Installationsordner.
+Exakt passende Quellarchive und Build-Anleitung: ffmpeg-sources.zip.
+FFmpeg kann durch eine eigene kompatible Version ersetzt werden.
+Weitere Komponenten: THIRD-PARTY-NOTICES.txt und zugehoerige Lizenzdateien.

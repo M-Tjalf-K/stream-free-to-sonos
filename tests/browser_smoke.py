@@ -55,6 +55,7 @@ try:
                 port.postMessage({id:1,type:'ping'});
             })""")
             assert result["result"]["version"] == "0.1.0", result
+            assert result["result"]["standalone"], "Installed helper still depends on an external Python interpreter"
             page.locator("body").screenshot(path=str(artifacts / "popup.png"))
             # Render long group names and populated controls without changing a real speaker.
             page.evaluate("() => render({active:false,status:'Verbunden',devices:[{ip:'192.168.178.42',name:'Wohnzimmer + Küche',volume:35}]})")

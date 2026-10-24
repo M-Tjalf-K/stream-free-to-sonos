@@ -1,37 +1,57 @@
 param(
     [ValidatePattern('^[a-p]{32}$')][string]$ExtensionId = 'dpdoiohoioboehbhnnkoogibhgiikigd',
-    [string]$PythonPath,
+    [string]$HostDirectory,
     [string]$FFmpegPath
 )
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path $PSScriptRoot -Parent
 $installRoot = Join-Path $env:LOCALAPPDATA 'SonosTabAudio'
-if (!$PythonPath) { $PythonPath = (Get-Command python -ErrorAction Stop).Source }
-if (!$FFmpegPath) { $FFmpegPath = (Get-Command ffmpeg -ErrorAction Stop).Source }
-$PythonPath = (Resolve-Path -LiteralPath $PythonPath).Path
+if (!$HostDirectory) {
+    $HostDirectory = Join-Path $repoRoot 'helper'
+    if (!(Test-Path -LiteralPath (Join-Path $HostDirectory 'sonos-host.exe'))) {
+        $HostDirectory = Join-Path $repoRoot 'dist\sonos-host'
+    }
+}
+$HostDirectory = (Resolve-Path -LiteralPath $HostDirectory).Path
+$hostExe = Join-Path $HostDirectory 'sonos-host.exe'
+if (!(Test-Path -LiteralPath $hostExe) -or !(Test-Path -LiteralPath (Join-Path $HostDirectory '_internal'))) {
+    throw 'Standalone helper missing. Use the Windows release ZIP or run scripts/build.ps1 first.'
+}
+if (Get-Process -Name 'sonos-host' -ErrorAction SilentlyContinue) {
+    throw 'Stop streaming and close any running helper before installing or updating.'
+}
+if (!$FFmpegPath) {
+    if (Test-Path -LiteralPath (Join-Path $HostDirectory 'ffmpeg.exe')) { $FFmpegPath = Join-Path $HostDirectory 'ffmpeg.exe' }
+    elseif (Test-Path -LiteralPath (Join-Path $installRoot 'ffmpeg.exe')) { $FFmpegPath = Join-Path $installRoot 'ffmpeg.exe' }
+    else { throw 'Bundled FFmpeg is missing. Rebuild the package or specify -FFmpegPath.' }
+}
 $FFmpegPath = (Resolve-Path -LiteralPath $FFmpegPath).Path
-& $PythonPath -c 'import sys; assert sys.version_info >= (3, 9), "Python 3.9 oder neuer erforderlich"'
-if ($LASTEXITCODE -ne 0) { throw 'Python-Prüfung fehlgeschlagen' }
+$selfTest = & $hostExe --self-test
+if ($LASTEXITCODE -ne 0 -or !($selfTest | ConvertFrom-Json).standalone) { throw 'Standalone helper check failed.' }
 $encoders = & $FFmpegPath -hide_banner -encoders 2>&1 | Out-String
-if ($encoders -notmatch 'libmp3lame') { throw 'FFmpeg benötigt libmp3lame' }
+if ($encoders -notmatch 'libmp3lame') { throw 'FFmpeg must include libmp3lame.' }
 New-Item -ItemType Directory -Path $installRoot -Force | Out-Null
-Copy-Item -LiteralPath (Join-Path $repoRoot 'helper\host.py') -Destination $installRoot -Force
-Copy-Item -LiteralPath $FFmpegPath -Destination (Join-Path $installRoot 'ffmpeg.exe') -Force
-[IO.File]::WriteAllText((Join-Path $installRoot 'python-path.txt'), $PythonPath)
+Get-ChildItem -LiteralPath $HostDirectory | Copy-Item -Destination $installRoot -Recurse -Force
+$extensionDirectory = Join-Path $repoRoot 'extension'
+if (Test-Path -LiteralPath $extensionDirectory) {
+    Copy-Item -LiteralPath $extensionDirectory -Destination $installRoot -Recurse -Force
+}
+$installedFFmpeg = Join-Path $installRoot 'ffmpeg.exe'
+if ($FFmpegPath -ne $installedFFmpeg) { Copy-Item -LiteralPath $FFmpegPath -Destination $installedFFmpeg -Force }
+foreach ($legacyFile in @('host.py', 'python-path.txt')) {
+    $legacyPath = Join-Path $installRoot $legacyFile
+    if (Test-Path -LiteralPath $legacyPath) { Remove-Item -LiteralPath $legacyPath }
+}
 $origin = "chrome-extension://$ExtensionId"
 $config = @{ origin = $origin } | ConvertTo-Json
 [IO.File]::WriteAllText((Join-Path $installRoot 'config.json'), $config)
 $launcher = Join-Path $installRoot 'sonos-host.exe'
-if (Test-Path -LiteralPath $launcher) { Remove-Item -LiteralPath $launcher }
-$compiler = Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
-if (!(Test-Path -LiteralPath $compiler)) { $compiler = Join-Path $env:WINDIR 'Microsoft.NET\Framework\v4.0.30319\csc.exe' }
-& $compiler /nologo /target:exe "/out:$launcher" (Join-Path $repoRoot 'helper\Launcher.cs')
-if ($LASTEXITCODE -ne 0) { throw 'Launcher konnte nicht erstellt werden' }
 $manifestPath = Join-Path $installRoot 'de.local.sonos.json'
-$manifest = @{ name = 'de.local.sonos'; description = 'Lokaler Sonos-Audiohelfer'; path = $launcher; type = 'stdio'; allowed_origins = @("$origin/") } | ConvertTo-Json
+$manifest = @{ name = 'de.local.sonos'; description = 'Stream to Sonos local audio helper'; path = $launcher; type = 'stdio'; allowed_origins = @("$origin/") } | ConvertTo-Json
 [IO.File]::WriteAllText($manifestPath, $manifest)
 $registryPath = 'HKCU:\Software\Google\Chrome\NativeMessagingHosts\de.local.sonos'
 New-Item -Path $registryPath -Force | Out-Null
 Set-Item -Path $registryPath -Value $manifestPath
-Write-Host "Installiert: $installRoot"
-Write-Host 'Chrome-Erweiterung oeffnen und Geraete suchen. Falls Windows fragt, Netzwerkzugriff nur im privaten Netz erlauben.'
+Write-Host "Installed standalone helper: $installRoot"
+Write-Host "In chrome://extensions, load the unpacked extension from: $(Join-Path $installRoot 'extension')"
+Write-Host 'Open the Chrome extension and search for devices. Allow helper network access on private networks if Windows asks.'

@@ -1,0 +1,2 @@
+# The FFmpeg rebuild script runs in a POSIX shell, including on Windows.
+*.sh text eol=lf

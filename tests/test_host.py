@@ -1,6 +1,7 @@
 import io
 import json
 import math
+import os
 import queue
 import struct
 import subprocess
@@ -20,6 +21,9 @@ import host
 
 
 class ProtocolTests(unittest.TestCase):
+    def test_frozen_runtime_uses_executable_directory_for_mutable_files(self):
+        with patch.object(host.sys, "frozen", True, create=True), patch.object(host.sys, "executable", str(Path.cwd() / "bundle" / "sonos-host.exe")):
+            self.assertEqual(host.runtime_root(), Path.cwd() / "bundle")
     def test_native_framing_unicode_eof_and_truncation(self):
         data = json.dumps({"type": "discover", "name": "Küche"}, ensure_ascii=False).encode()
         self.assertEqual(host.read_message(io.BytesIO(struct.pack("<I", len(data)) + data))["name"], "Küche")
@@ -82,8 +86,9 @@ class DiscoveryTests(unittest.TestCase):
 class StreamTests(unittest.TestCase):
     def test_real_ffmpeg_stream_auth_playback_and_cleanup(self):
         import shutil
-        ffmpeg = shutil.which("ffmpeg")
-        if not ffmpeg:
+        decoder = shutil.which("ffmpeg")
+        ffmpeg = os.environ.get("SONOS_TEST_FFMPEG", decoder)
+        if not ffmpeg or not decoder:
             self.skipTest("FFmpeg nicht installiert")
         events, calls = queue.Queue(), []
         def soap(ip, service, action, **values):
@@ -123,7 +128,7 @@ class StreamTests(unittest.TestCase):
                 with tempfile.TemporaryDirectory() as folder:
                     file = Path(folder) / "test.mp3"
                     file.write_bytes(b"".join(chunks))
-                    decoded = subprocess.run([ffmpeg, "-v", "error", "-i", str(file), "-f", "s16le", "-"], capture_output=True, timeout=10)
+                    decoded = subprocess.run([decoder, "-v", "error", "-i", str(file), "-f", "s16le", "-"], capture_output=True, timeout=10)
                     self.assertEqual(decoded.returncode, 0, decoded.stderr.decode())
                     self.assertGreater(len(decoded.stdout), 48000)
                 self.assertIn("SetAVTransportURI", [call[0] for call in calls])

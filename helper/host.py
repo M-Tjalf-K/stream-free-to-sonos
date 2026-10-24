@@ -20,7 +20,12 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from xml.sax.saxutils import escape
 
-ROOT = Path(__file__).resolve().parent
+def runtime_root():
+    # Mutable config, cache and FFmpeg belong next to the EXE, not in _internal.
+    return Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
+
+
+ROOT = runtime_root()
 HTTP = urllib.request.build_opener(urllib.request.ProxyHandler({}))
 CACHE = ROOT / "known-devices.json"
 
@@ -427,6 +432,9 @@ def read_message(stream):
 
 
 def main():
+    if sys.argv[1:] == ["--self-test"]:
+        print(json.dumps({"version": "0.1.0", "standalone": bool(getattr(sys, "frozen", False))}))
+        return
     if os.name == "nt":
         import msvcrt
         msvcrt.setmode(sys.stdin.fileno(), os.O_BINARY)
@@ -469,7 +477,7 @@ def main():
                         session = None
                     result = True
                 elif kind == "ping":
-                    result = {"version": "0.1.0"}
+                    result = {"version": "0.1.0", "standalone": bool(getattr(sys, "frozen", False))}
                 else:
                     raise ValueError("Unbekannter Befehl")
                 emit({"id": request["id"], "result": result})
