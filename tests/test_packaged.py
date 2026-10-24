@@ -74,6 +74,14 @@ class PackagedTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertEqual(result.stdout, b"")
 
+    def test_group_command_rejects_public_target(self):
+        data = json.dumps({"id": 1, "type": "set-group", "ip": "8.8.8.8", "members": ["8.8.8.8"]}).encode()
+        result = subprocess.run([str(self.exe), ORIGIN + "/"], env=self.environment,
+                                input=struct.pack("<I", len(data)) + data, capture_output=True, timeout=15)
+        self.assertEqual(result.returncode, 0, result.stderr.decode("utf-8", "replace"))
+        reply = json.loads(result.stdout[4:])
+        self.assertIn("private IPv4", reply["error"])
+
     def test_bundled_ffmpeg_encodes_pcm_without_external_tools(self):
         ffmpeg = self.folder / "ffmpeg.exe"
         self.assertTrue(ffmpeg.exists(), "Release must include FFmpeg")

@@ -1,11 +1,16 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><link rel="stylesheet" href="popup.css"></head>
-<body><h1>Stream to Sonos</h1><p class="sub" data-i18n="subtitle">Tab audio straight to your home network</p>
-<div class="language"><label for="language" data-i18n="language">Language</label><select id="language"><option value="en">English</option><option value="de">Deutsch</option></select></div>
+<body><header class="heading"><h1>Stream to Sonos</h1><button id="language" type="button" data-language="en" title="English – switch to German" aria-label="English – switch to German"><img id="language-flag" src="flags/en.svg" width="20" height="14" alt=""></button></header><p class="sub" data-i18n="subtitle">Tab audio straight to your home network</p>
 <label for="devices" data-i18n="devices">Room or existing group</label><select id="devices"></select>
 <button id="refresh" class="secondary" data-i18n="refresh">Find devices</button>
+<details id="groups"><summary data-i18n="manageGroups">Manage groups</summary>
+<p class="group-note" data-i18n="groupHelp">Choose a main room, then check the rooms to play together. Uncheck a room to remove it. Changing groups can interrupt current Sonos playback.</p>
+<fieldset id="group-controls"><label for="group-main" data-i18n="groupMain">Main room</label><select id="group-main"></select>
+<div id="group-rooms"></div>
+<button id="group-apply" data-i18n="groupApply">Apply group</button><button id="group-dissolve" class="secondary" data-i18n="groupDissolve">Dissolve group</button></fieldset>
+<p id="group-hint" class="group-note" role="status"></p></details>
 <details><summary data-i18n="manual">Add a device manually</summary><div class="manual"><input id="ip" placeholder="192.168.178.42" aria-label="Sonos IP address"><button id="add" data-i18n="add">Add</button></div></details>
-<p><span data-i18n="source">Source:</span> <span id="source">Current tab</span></p>
+<p class="source"><span data-i18n="source">Source:</span> <span id="source">Current tab</span></p>
 <button id="start" data-i18n="start">Play on Sonos</button><button id="stop" class="secondary" disabled data-i18n="stop">Stop streaming</button>
 <label for="volume"><span data-i18n="volume">Volume</span> <output id="level">–</output></label><input id="volume" type="range" min="0" max="100" value="25" disabled>
 <p id="status" role="status">Ready</p><p class="foot" data-i18n="footer">Local · no account · audio delay applies</p>

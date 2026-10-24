@@ -1,6 +1,6 @@
 let port, serial = 0;
 const pending = new Map();
-let state = {active: false, status: "Bereit", devices: []};
+let state = {active: false, status: "Bereit", devices: [], groupBusy: false};
 let busy = false;
 
 function connect() {
@@ -34,11 +34,11 @@ function connect() {
   });
 }
 
-function native(type, data = {}) {
+function native(type, data = {}, timeout = 20000) {
   connect();
   return new Promise((resolve, reject) => {
     const id = ++serial;
-    const timer = setTimeout(() => { pending.delete(id); reject(new Error("Helfer antwortet nicht")); }, 20000);
+    const timer = setTimeout(() => { pending.delete(id); reject(new Error("Helfer antwortet nicht")); }, timeout);
     pending.set(id, {resolve, reject, timer});
     port.postMessage({id, type, ...data});
   });
@@ -56,6 +56,27 @@ async function stop(status = "Übertragung beendet") {
 
 async function handle(message) {
   if (message.type === "state") return state;
+  if (state.groupBusy) throw new Error("groupBusy");
+  if (message.type === "set-group") {
+    if (state.active || busy) throw new Error("groupWhileStreaming");
+    if (pending.size) throw new Error("groupBusy");
+    state.groupBusy = true;
+    state.status = "groupUpdating";
+    try {
+      state.devices = await native("set-group", {ip: message.ip, members: message.members, dissolve: Boolean(message.dissolve)}, 65000);
+      state.status = "groupUpdated";
+      return state;
+    } catch (error) {
+      // Reconcile even after a partial write. Never present the old group as
+      // the current result after some speakers have already moved.
+      try { state.devices = await native("discover", {ip: message.ip}); }
+      catch { state.devices = []; }
+      throw error;
+    } finally {
+      const old = port; port = undefined; old?.disconnect();
+      state.groupBusy = false;
+    }
+  }
   if (message.type === "capture-error") { await stop(message.error); return state; }
   if (message.type === "devices") {
     if (state.active) throw new Error("Gerätesuche während einer Übertragung nicht möglich");

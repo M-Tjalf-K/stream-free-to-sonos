@@ -2,7 +2,9 @@
 
 An independent open-source project that streams audio from a Chrome tab to Sonos speakers on your local network. Use it for YouTube, podcasts, and live streams without a Sonos login, cloud server, or telemetry.
 
-The extension uses a small local helper that Chrome starts automatically and shuts down when streaming ends. It supports individual rooms and existing Sonos groups, including volume control.
+The extension uses a small local helper that Chrome starts automatically and shuts down when streaming ends. It supports individual rooms and Sonos groups, including volume control and group management.
+
+![Stream to Sonos extension with a selected Sonos group, playback controls, and volume adjustment](docs/images/stream-to-sonos.png)
 
 ## Requirements
 
@@ -40,9 +42,19 @@ For scripted installation, the alternative ZIP `stream-to-sonos-windows-x64.zip`
 3. Click **Play on Sonos**. You can then close the popup.
 4. Click **Stop streaming** to end streaming and restore local audio playback.
 
-The interface defaults to English. Use the **Language** selector to switch between **English** and **Deutsch**; the choice is saved locally and applies when the popup is reopened. Switching language also updates status and error messages without stopping a stream or changing the selected room or volume. Device names and source-tab titles are kept as provided.
+The interface defaults to English. Click the small **flag icon in the top-right corner** to switch between **English** and **Deutsch**; the flag shows the current language. The choice is saved locally and applies when the popup is reopened. Switching language also updates status and error messages without stopping a stream or changing the selected room or volume. Device names and source-tab titles are kept as provided.
 
-Pause, select tracks, and seek using the source website. Create groups in the Sonos app. If automatic discovery finds no devices, enter a Sonos device's IP address manually. Successfully discovered devices are saved locally for future searches.
+Pause, select tracks, and seek using the source website. If automatic discovery finds no devices, enter a Sonos device's IP address manually. Successfully discovered devices are saved locally for future searches.
+
+## Managing groups
+
+Stop tab streaming, find devices, and open **Manage groups** (**Gruppen verwalten**). Choose a **Main room** and check the rooms that should play together, then click **Apply group**. Existing members are preselected; uncheck a room to remove it. A room selected from another group moves on its own, leaving that group's other rooms together.
+
+The main room always stays selected. To remove the current main room, choose a different main room first. **Dissolve group** separates all rooms in the main room's current group, including when the chosen main room is not its current coordinator. Stereo pairs and surround systems are treated as single rooms; this feature does not create or break speaker bonds.
+
+Group changes are disabled during tab streaming. They can interrupt music already playing through Sonos. The helper checks fresh topology before changing rooms and verifies the resulting group before reporting success. If a device stops responding, some changes may already have happened; the room list is refreshed so you can check the result and retry. Use **Find devices** to pick up changes made in the Sonos app.
+
+Group management requires the updated Windows helper. Run the new setup and reload the extension at `chrome://extensions` when upgrading from an older release.
 
 ## Limitations
 

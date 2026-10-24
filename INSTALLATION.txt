@@ -17,11 +17,24 @@ Stream to Sonos - Installation
    Setup does not automatically install or enable the extension in Chrome.
 
 3. Open a tab with audio, open the extension, select a room, and click
-   "Play on Sonos". The interface defaults to English. Use the "Language"
-   selector to switch between English and Deutsch; your choice is saved.
+   "Play on Sonos". The interface defaults to English. Click the small flag
+   in the top-right corner to switch between English and Deutsch; your choice
+   is saved. The flag shows the current language.
    Your computer and Sonos devices
    must be able to reach each other on the local network. If Windows asks
    whether the helper may access the network, allow access on private networks.
+
+Managing groups
+---------------
+Stop streaming, find devices, and expand "Manage groups".
+Choose a "Main room", check the rooms to play together, and click "Apply group".
+Uncheck a room to remove it. To remove the main room, choose another main room
+first. "Dissolve group" separates all rooms in the main room's current group.
+Stereo pairs and surround systems stay together as single rooms.
+Group changes can interrupt existing Sonos playback. If a change fails, some
+rooms may already have moved; check the refreshed room list before retrying.
+If group controls are unavailable with an older helper, run the new setup
+and reload the extension at chrome://extensions.
 
 Updates
 -------

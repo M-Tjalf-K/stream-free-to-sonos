@@ -2,6 +2,15 @@
 const SonosI18n = (() => {
   const strings = {
     en: {
+      switchLanguage: "English – switch to German",
+      manageGroups: "Manage groups", groupMain: "Main room", groupApply: "Apply group", groupDissolve: "Dissolve group",
+      groupHelp: "Choose a main room, then check the rooms to play together. Uncheck a room to remove it. Changing groups can interrupt current Sonos playback.",
+      groupMainHint: "The main room stays selected. Choose another main room to remove it. Stereo and surround rooms stay together.",
+      groupNoRooms: "Find devices first. If rooms are missing, update the local helper using the new setup.",
+      groupWhileStreaming: "Stop streaming before changing groups.", groupBusy: "A group change is in progress.",
+      groupUpdating: "Updating group…", groupUpdated: "Group updated", invalidGroupRooms: "Select known rooms from the same Sonos system, including the main room.",
+      groupNotConfirmed: "Sonos did not confirm the requested group.",
+      groupChangeFailed: "The group change failed. Some rooms may have moved. Check the refreshed room list.",
       language: "Language", subtitle: "Tab audio straight to your home network",
       devices: "Room or existing group", refresh: "Find devices", manual: "Add a device manually",
       add: "Add", ip: "Sonos IP address", source: "Source:", currentTab: "Current tab",
@@ -24,6 +33,15 @@ const SonosI18n = (() => {
       sonosRejected: "Sonos rejected {action} (HTTP {code}). Check the UPnP setting. {detail}",
     },
     de: {
+      switchLanguage: "Deutsch – zu Englisch wechseln",
+      manageGroups: "Gruppen verwalten", groupMain: "Hauptraum", groupApply: "Gruppe übernehmen", groupDissolve: "Gruppe auflösen",
+      groupHelp: "Hauptraum wählen und die gemeinsam spielenden Räume anhaken. Haken entfernen, um einen Raum zu lösen. Änderungen können die aktuelle Sonos-Wiedergabe unterbrechen.",
+      groupMainHint: "Der Hauptraum bleibt ausgewählt. Zum Entfernen einen anderen Hauptraum wählen. Stereo- und Surroundräume bleiben zusammen.",
+      groupNoRooms: "Zuerst Geräte suchen. Falls Räume fehlen, den lokalen Helfer mit dem neuen Setup aktualisieren.",
+      groupWhileStreaming: "Vor Gruppenänderungen die Übertragung stoppen.", groupBusy: "Eine Gruppenänderung läuft bereits.",
+      groupUpdating: "Gruppe wird geändert …", groupUpdated: "Gruppe aktualisiert", invalidGroupRooms: "Bekannte Räume desselben Sonos-Systems einschließlich Hauptraum auswählen.",
+      groupNotConfirmed: "Sonos hat die gewünschte Gruppe nicht bestätigt.",
+      groupChangeFailed: "Die Gruppenänderung ist fehlgeschlagen. Einzelne Räume können bereits verschoben sein. Die aktualisierte Raumliste prüfen.",
       language: "Sprache", subtitle: "Tab-Ton direkt ins Heimnetz",
       devices: "Raum oder bestehende Gruppe", refresh: "Geräte suchen", manual: "Gerät manuell hinzufügen",
       add: "Hinzufügen", ip: "Sonos-IP-Adresse", source: "Quelle:", currentTab: "Aktueller Tab",
@@ -58,6 +76,7 @@ const SonosI18n = (() => {
     const key = aliases.get(message) || message;
     if (Object.hasOwn(messages, key)) return messages[key];
     if (typeof message !== "string") return messages.ready;
+    if (message.startsWith("groupChangeFailed: ")) return messages.groupChangeFailed + " " + translate(message.slice(19), language);
     const ffmpeg = message.match(/^FFmpeg (?:beendet|exited): (.*)$/s);
     if (ffmpeg) return messages.ffmpegExited + ffmpeg[1];
     const http = message.match(/^(?:Audioverbindung unterbrochen|Audio connection interrupted) \((?:HTTP )?(\d+)\)$/);

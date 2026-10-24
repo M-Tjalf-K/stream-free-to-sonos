@@ -29,6 +29,10 @@ UninstallDisplayName=Stream to Sonos (lokaler Helper)
 Name: "german"; MessagesFile: "compiler:Languages\German.isl"
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
+[Messages]
+SetupAppTitle=Install Wizard
+SetupWindowTitle=%1 - Install Wizard
+
 [Files]
 Source: "{#PackageRoot}\helper\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#PackageRoot}\extension\*"; DestDir: "{app}\extension"; Flags: ignoreversion recursesubdirs createallsubdirs

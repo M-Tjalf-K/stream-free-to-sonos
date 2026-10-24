@@ -175,6 +175,80 @@ def group_target(ip):
     raise RuntimeError("Sonos-Gruppenkoordinator wurde nicht gefunden")
 
 
+def room_groups(xml):
+    """Expose logical rooms only: never satellites or invisible bonded players."""
+    result = []
+    for group in xml.iter("ZoneGroup"):
+        members = []
+        for member in group.findall("ZoneGroupMember"):
+            if member.get("Invisible") == "1":
+                continue
+            members.append({"ip": local_ip(urllib.parse.urlparse(member.get("Location", "")).hostname),
+                            "uuid": member.get("UUID", ""), "name": member.get("ZoneName", "Sonos")})
+        coordinator = next((member for member in members if member["uuid"] == group.get("Coordinator")), None)
+        if coordinator and all(member["uuid"] for member in members):
+            result.append({"ip": coordinator["ip"], "members": members})
+    return result
+
+
+def set_group(ip, members, dissolve=False):
+    """Set exact visible-room membership, with ip as the retained main room.
+
+    Membership is checked against fresh topology before issuing any write.
+    Bonded-zone APIs are deliberately never used. Network failures can leave a
+    partial result, so only confirmed topology is reported as success.
+    """
+    ip = local_ip(ip)
+    if not isinstance(members, list) or not 1 <= len(members) <= 64 or any(not isinstance(value, str) for value in members):
+        raise ValueError("invalidGroupRooms")
+    desired = {local_ip(value) for value in members}
+    groups = room_groups(topology(ip))
+    rooms = {member["ip"]: member for group in groups for member in group["members"]}
+    if not isinstance(dissolve, bool) or ip not in desired or not desired <= rooms.keys() or (dissolve and desired != {ip}):
+        raise ValueError("invalidGroupRooms")
+    original = next(group for group in groups if any(member["ip"] == ip for member in group["members"]))
+    deadline = time.monotonic() + 40
+
+    def command(address, action, **values):
+        if time.monotonic() >= deadline:
+            raise TimeoutError("groupNotConfirmed")
+        return soap(address, "AVTransport", action, InstanceID=0, **values)
+
+    def wait_for(address, expected):
+        until = min(deadline, time.monotonic() + 5)
+        while time.monotonic() < until:
+            current = room_groups(topology(address))
+            if any(group["ip"] == address and {room["ip"] for room in group["members"]} == expected for group in current):
+                return
+            time.sleep(0.2)
+        raise TimeoutError("groupNotConfirmed")
+
+    try:
+        current = {member["ip"] for member in original["members"]}
+        if dissolve:
+            for address in sorted(current - {original["ip"]}) + [original["ip"]]:
+                command(address, "BecomeCoordinatorOfStandaloneGroup")
+            for address in current:
+                wait_for(address, {address})
+            return discover(ip)
+        if original["ip"] != ip:
+            command(ip, "BecomeCoordinatorOfStandaloneGroup")
+            wait_for(ip, {ip})
+            current = {ip}
+        for address in sorted(desired - current):
+            # Detach just this room first, so its former group's other rooms
+            # cannot accidentally follow it into the new group.
+            command(address, "BecomeCoordinatorOfStandaloneGroup")
+            wait_for(address, {address})
+            command(address, "SetAVTransportURI", CurrentURI="x-rincon:" + rooms[ip]["uuid"], CurrentURIMetaData="")
+        for address in sorted(current - desired):
+            command(address, "BecomeCoordinatorOfStandaloneGroup")
+        wait_for(ip, desired)
+    except Exception as error:
+        raise RuntimeError("groupChangeFailed: " + str(error)) from error
+    return discover(ip)
+
+
 def discover(manual=""):
     if manual:
         ips = {local_ip(manual)}
@@ -196,7 +270,8 @@ def discover(manual=""):
                     continue
                 target = local_ip(urllib.parse.urlparse(coordinator.get("Location", "")).hostname)
                 names = [member.get("ZoneName", "Sonos") for member in members]
-                result[target] = {"ip": target, "name": " + ".join(names) or data["name"], "volume": volume(target)}
+                visible = next((item["members"] for item in room_groups(groups) if item["ip"] == target), [])
+                result[target] = {"ip": target, "name": " + ".join(names) or data["name"], "volume": volume(target), "members": visible}
                 for member in group.iter("ZoneGroupMember"):
                     try:
                         verified.add(local_ip(urllib.parse.urlparse(member.get("Location", "")).hostname))
@@ -464,6 +539,10 @@ def main():
                 kind = request["type"]
                 if kind == "discover":
                     result = discover(request.get("ip", ""))
+                elif kind == "set-group":
+                    if session:
+                        raise ValueError("groupWhileStreaming")
+                    result = set_group(request["ip"], request.get("members"), request.get("dissolve", False))
                 elif kind == "volume":
                     result = volume(local_ip(request["ip"]), request["volume"])
                 elif kind == "start":

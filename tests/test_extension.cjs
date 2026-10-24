@@ -38,7 +38,7 @@ test('worklet batches stereo PCM, clips, duplicates mono and sends silence', () 
 });
 
 test('worker starts helper after capture consent, stops and releases native port', async () => {
-  let listener, hasDocument = false;
+  let listener, hasDocument = false, failGroup = false;
   const calls = [];
   const ports = [];
   const chrome = {
@@ -53,7 +53,11 @@ test('worker starts helper after capture consent, stops and releases native port
           onDisconnect: {addListener: callback => onDisconnect = callback},
           postMessage: message => {
             calls.push(message.type);
-            setImmediate(() => onMessage({id: message.id, result: message.type === 'discover' ? [{ip:'192.168.1.2',name:'Test',volume:25}] : message.type === 'start' ? {upload:'http://127.0.0.1:1234/pcm',token:'test'} : true}));
+            if (message.type === 'set-group' && failGroup) {
+              setImmediate(() => onMessage({id:message.id,error:'groupChangeFailed: speaker offline'}));
+              return;
+            }
+            setImmediate(() => onMessage({id: message.id, result: ['discover','set-group'].includes(message.type) ? [{ip:'192.168.1.2',name:'Test',volume:25}] : message.type === 'start' ? {upload:'http://127.0.0.1:1234/pcm',token:'test'} : true}));
           },
           disconnect: () => { calls.push('disconnect'); setImmediate(onDisconnect); }
         };
@@ -70,11 +74,25 @@ test('worker starts helper after capture consent, stops and releases native port
   function send(message) { return new Promise(resolve => listener(message, {id:'test'}, resolve)); }
   assert.equal((await send({type:'devices'})).ok, true);
   assert.equal(calls.at(-1), 'disconnect');
+  const grouped = await send({type:'set-group',ip:'192.168.1.2',members:['192.168.1.2'],dissolve:true});
+  assert.equal(grouped.ok, true);
+  assert.equal(grouped.result.groupBusy, false);
+  assert.equal(calls.at(-1), 'disconnect');
+  failGroup = true;
+  const failedGroup = await send({type:'set-group',ip:'192.168.1.2',members:['192.168.1.2']});
+  assert.equal(failedGroup.ok, false);
+  const recovered = await send({type:'state'});
+  assert.equal(recovered.result.groupBusy, false);
+  assert.equal(recovered.result.devices[0].name, 'Test');
+  assert.deepEqual(calls.slice(-3), ['set-group','discover','disconnect']);
   const started = await send({type:'start',tabId:42,ip:'192.168.1.2'});
   assert.equal(started.ok, true);
   assert.equal(started.result.active, true);
   assert.ok(calls.indexOf('capture') < calls.indexOf('start'));
   assert.equal((await send({type:'start',tabId:42,ip:'192.168.1.2'})).ok, false);
+  const count = calls.filter(call => call === 'set-group').length;
+  assert.equal((await send({type:'set-group',ip:'192.168.1.2',members:['192.168.1.2']})).ok, false);
+  assert.equal(calls.filter(call => call === 'set-group').length, count);
   const stopped = await send({type:'stop'});
   assert.equal(stopped.result.active, false);
   assert.equal(calls.at(-1), 'disconnect');
